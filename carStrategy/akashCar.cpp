@@ -2,9 +2,9 @@
 #include "economyCar.h"
 
 int main() {
-	BaseCar* akashCar = new SportsCar(new SportsDrivingMode());
+	BaseCar* akashCar = new SportsCar();
 	akashCar->driveMode();
 
-	BaseCar* akashCar2 = new EconomyCar(new BasicDrivingMode());
+	BaseCar* akashCar2 = new EconomyCar();
 	akashCar2->driveMode();
 }
