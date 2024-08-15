@@ -1,6 +1,7 @@
+#pragma once
+
 #include <iostream>
-#include <vector>
-#include "Observable.h"
+#include "EarPhoneObservable.h"
 #include "DesktopObserver.h"
 #include "MobileObserver.h"
 
@@ -13,6 +14,8 @@ int main() {
 	earPhoneObservable.addObserver(desktopObserver);
 
 	earPhoneObservable.setData(1);
+
+	delete desktopObserver;
 
 	return 0;
 }
