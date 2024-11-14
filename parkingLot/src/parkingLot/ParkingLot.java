@@ -2,71 +2,104 @@ package parkingLot;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Scanner;
+import org.apache.commons.lang3.tuple.Pair;
+
+import parkingLot.constants.VehicleType;
+import parkingLot.controller.EntryGateController;
+import parkingLot.controller.ExitGateController;
+import parkingLot.controller.ParkingSpotsController;
+import parkingLot.controller.VehicleController;
+import parkingLot.model.parking.FourWheelerParkingSpot;
+import parkingLot.model.parking.ParkingSpot;
+import parkingLot.model.parking.TwoWheelerParkingSpot;
+import parkingLot.model.ticket.Ticket;
+import parkingLot.model.vehicle.Vehicle;
+import parkingLot.repository.FourWheelerParkingSpotManager;
+import parkingLot.repository.TwoWheelerParkingSpotManager;
 
 public class ParkingLot {
 
 	public static void main(String[] args) {
-		initialize();
 		
-		Vehicle akashVehicle = new Vehicle(1, VehicleType.TWO_WHEELER);
-		if(processVehicleAtEntryGate(akashVehicle)) {
-			System.out.println("Vehicle "+ akashVehicle +"entered parking lot.");
+		ArrayList<Pair<Integer, Integer>> op = new ArrayList<>();
+		Scanner scanner = new Scanner(System.in);
+		ParkingSpotsController.getParkingSpotsController().initialize(scanner);
+		
+		System.out.println("Parking lot system started.");
+		
+		while(true) {
+			System.out.println("\nEnter 'E' for entry, 'X' for exit, and 'Q' for closing the parking lot system.");
+			String input = scanner.nextLine();
+			
+			switch(input) {
+			
+			case "E":
+				handleEntry(scanner);
+				break;
+				
+			case "X":
+				handleExit(scanner);
+				break;
+			case "Q":
+				System.out.println("Parking lot system is closed.");
+				scanner.close();
+				return;
+			default:
+				System.out.println("Invalid input. Please Enter 'E' for entry, 'X' for exit, and 'Q' for closing the parking lot system.");
+				break;
+			}
 		}
-		Vehicle shrivatsaVehicle = new Vehicle(2, VehicleType.TWO_WHEELER);
-		if(processVehicleAtEntryGate(shrivatsaVehicle)) {
-			System.out.println("Vehicle "+ shrivatsaVehicle +"entered parking lot.");
-		}
-		Vehicle jordanVehicle = new Vehicle(2, VehicleType.TWO_WHEELER);
-		if(processVehicleAtEntryGate(shrivatsaVehicle)) {
-			System.out.println("Vehicle "+ jordanVehicle +"entered parking lot.");
-		}
-		try {
-			Thread.sleep(2000);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		processVehicleAtExitGate(akashVehicle);
-		try {
-			Thread.sleep(2000);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
-		processVehicleAtExitGate(shrivatsaVehicle);
-		// processVehicleAtExitGate(jordanVehicle);
-		
-		
-	}
-
-	public static void initialize() {
-		
-		ArrayList<ParkingSpot> twoWheelerParkingSpotList = 
-				new ArrayList<>(Arrays.asList(new TwoWheelerParkingSpot(1), new TwoWheelerParkingSpot(2)));
-		ArrayList<ParkingSpot> fourWheelerParkingSpotList = 
-				new ArrayList<>(Arrays.asList(new FourWheelerParkingSpot(3), new FourWheelerParkingSpot(4)));
-		
-		TwoWheelerParkingSpotManager twoWheelerParkingSpotManager = TwoWheelerParkingSpotManager.getTwoWheelerParkingSpotManager();
-		twoWheelerParkingSpotManager.addParkingSpots(twoWheelerParkingSpotList);
-		FourWheelerParkingSpotManager fourWheelerParkingSpotManager = FourWheelerParkingSpotManager.getFourWheelerParkingSpotManager();
-		fourWheelerParkingSpotManager.addParkingSpots(fourWheelerParkingSpotList);
-		
-		
 	}
 	
-	public static boolean processVehicleAtEntryGate(Vehicle vehicle) {
-		EntryGate entryGate = EntryGate.getEntryGateInstance();
+	private static void handleEntry(Scanner scanner) {
+		System.out.println("Enter vehicle ID: ");
+		int id = scanner.nextInt();
+		System.out.println("Enter vehicle type (1 for Two_wheeler and 2 for Four_Wheeler): ");
+		int type = scanner.nextInt();
+		scanner.nextLine();
+		
+		Vehicle vehicle = new Vehicle(id, (type==1) ? VehicleType.TWO_WHEELER : VehicleType.FOUR_WHEELER);
+		
+		if(processVehicleAtEntryGate(vehicle)) {
+			System.out.println("Vehicle "+ vehicle.getVehicleId() +" entered parking lot.");
+			VehicleController.getVehicleController().addVehicle(vehicle);
+		}
+		else {
+			System.out.println("Parking lot is full.");
+		}
+	}
+	
+	private static void handleExit(Scanner scanner) {
+		System.out.println("Enter vehicle ID: ");
+		int id = scanner.nextInt();
+		scanner.nextLine();
+		
+		Vehicle vehicle = findVehicleById(id);
+		
+		processVehicleAtExitGate(vehicle);
+		System.out.println("Vehicle "+vehicle.getVehicleId() + " has exited the parking lot.");
+	}
+	
+	private static boolean processVehicleAtEntryGate(Vehicle vehicle) {
+		EntryGateController entryGate = EntryGateController.getEntryGateInstance();
 		ParkingSpot parkingSpot = entryGate.bookParkingSpot(vehicle);
 		if(parkingSpot == null) {
 			return false;
 		}
 		Ticket ticket = entryGate.generateTicket(parkingSpot);
-		vehicle.setTicket(ticket);
+		// vehicle.setTicket(ticket);
 		return true;
 	}
 	
+	private static Vehicle findVehicleById(int vehicleId) {
+		return VehicleController.getVehicleController().getVehicle(vehicleId);
+	}
+	
 	private static void processVehicleAtExitGate(Vehicle vehicle) {
-		ExitGate exitGate = ExitGate.getExitGateInstance();
+		ExitGateController exitGate = ExitGateController.getExitGateInstance();
 		exitGate.takePayment(vehicle);
-		
+		VehicleController.getVehicleController().removeVehicle(vehicle.getVehicleId());
 	}
 
 }
